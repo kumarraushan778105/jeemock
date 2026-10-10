@@ -1,0 +1,404 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-answered: var(--answered);
+  --color-answered-foreground: var(--answered-foreground);
+  --color-notanswered: var(--notanswered);
+  --color-notanswered-foreground: var(--notanswered-foreground);
+  --color-marked: var(--marked);
+  --color-marked-foreground: var(--marked-foreground);
+  --color-answeredmarked: var(--answeredmarked);
+  --color-notvisited: var(--notvisited);
+  --color-notvisited-foreground: var(--notvisited-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-physics: var(--physics);
+  --color-chemistry: var(--chemistry);
+  --color-maths: var(--maths);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --radius: 0.6rem;
+  --action-glow-border: color-mix(in oklab, var(--primary) 20%, transparent);
+  --action-glow-near: color-mix(in oklab, var(--primary) 35%, transparent);
+  --action-glow-mid: color-mix(in oklab, var(--primary) 25%, transparent);
+  --action-glow-far: color-mix(in oklab, var(--primary) 12%, transparent);
+  --action-glow-peak-border: color-mix(in oklab, var(--primary) 32%, transparent);
+  --action-glow-peak-near: color-mix(in oklab, var(--primary) 48%, transparent);
+  --action-glow-peak-mid: color-mix(in oklab, var(--primary) 34%, transparent);
+  --action-glow-peak-far: color-mix(in oklab, var(--primary) 16%, transparent);
+  --background: oklch(0.985 0.004 250);
+  --foreground: oklch(0.21 0.03 258);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.03 258);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.03 258);
+  --primary: oklch(0.52 0.19 262);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --secondary: oklch(0.95 0.012 250);
+  --secondary-foreground: oklch(0.3 0.03 258);
+  --muted: oklch(0.955 0.01 250);
+  --muted-foreground: oklch(0.52 0.025 256);
+  --accent: oklch(0.93 0.045 220);
+  --accent-foreground: oklch(0.28 0.06 245);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.9 0.012 252);
+  --input: oklch(0.9 0.012 252);
+  --ring: oklch(0.52 0.19 262);
+  --surface: oklch(0.975 0.008 250);
+  --surface-foreground: oklch(0.25 0.03 258);
+  --answered: oklch(0.58 0.16 150);
+  --answered-foreground: oklch(0.99 0 0);
+  --notanswered: oklch(0.58 0.21 25);
+  --notanswered-foreground: oklch(0.99 0 0);
+  --marked: oklch(0.52 0.2 300);
+  --marked-foreground: oklch(0.99 0 0);
+  --answeredmarked: oklch(0.6 0.19 330);
+  --notvisited: oklch(0.9 0.012 252);
+  --notvisited-foreground: oklch(0.35 0.03 258);
+  --success: oklch(0.58 0.16 150);
+  --warning: oklch(0.72 0.16 75);
+  --physics: oklch(0.6 0.17 250);
+  --chemistry: oklch(0.62 0.16 150);
+  --maths: oklch(0.65 0.18 45);
+  --chart-1: oklch(0.6 0.17 250);
+  --chart-2: oklch(0.62 0.16 150);
+  --chart-3: oklch(0.65 0.18 45);
+  --chart-4: oklch(0.55 0.2 300);
+  --chart-5: oklch(0.6 0.2 20);
+}
+
+.dark {
+  --action-glow-border: color-mix(in oklab, var(--primary) 14%, transparent);
+  --action-glow-near: color-mix(in oklab, var(--primary) 25%, transparent);
+  --action-glow-mid: color-mix(in oklab, var(--primary) 18%, transparent);
+  --action-glow-far: color-mix(in oklab, var(--primary) 8%, transparent);
+  --action-glow-peak-border: color-mix(in oklab, var(--primary) 24%, transparent);
+  --action-glow-peak-near: color-mix(in oklab, var(--primary) 36%, transparent);
+  --action-glow-peak-mid: color-mix(in oklab, var(--primary) 26%, transparent);
+  --action-glow-peak-far: color-mix(in oklab, var(--primary) 12%, transparent);
+  --background: oklch(0.19 0.022 258);
+  --foreground: oklch(0.95 0.008 250);
+  --card: oklch(0.235 0.024 258);
+  --card-foreground: oklch(0.95 0.008 250);
+  --popover: oklch(0.235 0.024 258);
+  --popover-foreground: oklch(0.95 0.008 250);
+  --primary: oklch(0.68 0.16 258);
+  --primary-foreground: oklch(0.17 0.03 258);
+  --secondary: oklch(0.28 0.026 258);
+  --secondary-foreground: oklch(0.93 0.01 250);
+  --muted: oklch(0.28 0.026 258);
+  --muted-foreground: oklch(0.7 0.02 256);
+  --accent: oklch(0.32 0.05 250);
+  --accent-foreground: oklch(0.95 0.01 250);
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.15 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.68 0.16 258);
+  --surface: oklch(0.22 0.023 258);
+  --surface-foreground: oklch(0.93 0.01 250);
+  --answered: oklch(0.62 0.16 150);
+  --answered-foreground: oklch(0.14 0 0);
+  --notanswered: oklch(0.62 0.2 25);
+  --notanswered-foreground: oklch(0.14 0 0);
+  --marked: oklch(0.62 0.19 300);
+  --marked-foreground: oklch(0.14 0 0);
+  --answeredmarked: oklch(0.68 0.18 330);
+  --notvisited: oklch(0.32 0.026 258);
+  --notvisited-foreground: oklch(0.9 0.01 250);
+  --success: oklch(0.68 0.16 150);
+  --warning: oklch(0.78 0.15 75);
+  --physics: oklch(0.7 0.15 250);
+  --chemistry: oklch(0.72 0.14 150);
+  --maths: oklch(0.75 0.15 45);
+  --chart-1: oklch(0.7 0.15 250);
+  --chart-2: oklch(0.72 0.14 150);
+  --chart-3: oklch(0.75 0.15 45);
+  --chart-4: oklch(0.65 0.18 300);
+  --chart-5: oklch(0.68 0.18 20);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@keyframes premium-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes premium-draw {
+  0% {
+    opacity: 0.15;
+    stroke-dasharray: 0 1000;
+  }
+  100% {
+    opacity: 1;
+    stroke-dasharray: 1000 0;
+  }
+}
+
+@keyframes premium-grow {
+  0% {
+    transform: scaleY(0.18);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes premium-dot-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes live-indicator-pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(0.9);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+}
+
+@keyframes premium-tooltip-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chart-animated {
+  animation: premium-fade-up 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chart-animated .recharts-wrapper,
+.chart-animated .recharts-surface,
+.chart-animated .recharts-cartesian-grid,
+.chart-animated .recharts-layer {
+  animation: premium-fade-up 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chart-animated .recharts-line .recharts-curve,
+.chart-animated .recharts-area .recharts-area-curve,
+.chart-animated .recharts-area-curve {
+  stroke-dasharray: 1000;
+  animation: premium-draw 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chart-animated .recharts-bar-rectangle,
+.chart-animated .recharts-rectangle {
+  transform-origin: center bottom;
+  animation: premium-grow 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chart-animated .recharts-dot {
+  opacity: 0;
+  transform-origin: center;
+  animation: premium-dot-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.chart-animated .recharts-bar-rectangle,
+.chart-animated .recharts-rectangle {
+  transition: opacity 180ms ease-out, filter 180ms ease-out;
+}
+
+.chart-animated .recharts-tooltip-wrapper {
+  animation: premium-tooltip-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.premium-card {
+  transition:
+    transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.premium-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px color-mix(in oklab, var(--primary) 8%, transparent);
+}
+
+@keyframes quick-action-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  35% {
+    box-shadow:
+      0 0 0 1px var(--action-glow-border),
+      0 0 8px var(--action-glow-near),
+      0 0 18px var(--action-glow-mid),
+      0 0 30px var(--action-glow-far);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 1px var(--action-glow-peak-border),
+      0 0 10px var(--action-glow-peak-near),
+      0 0 22px var(--action-glow-peak-mid),
+      0 0 34px var(--action-glow-peak-far);
+  }
+
+  65% {
+    box-shadow:
+      0 0 0 1px var(--action-glow-border),
+      0 0 8px var(--action-glow-near),
+      0 0 18px var(--action-glow-mid),
+      0 0 30px var(--action-glow-far);
+  }
+}
+
+.live-status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  animation: live-indicator-pulse 1.1s ease-in-out infinite;
+}
+
+.quick-action-tile,
+.hero-action-glow {
+  animation: quick-action-breathe 2.8s ease-in-out infinite;
+}
+
+.hero-action-glow + .hero-action-glow {
+  animation-delay: 0.35s;
+}
+
+.quick-action-tile:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.quick-action-tile:nth-child(3) {
+  animation-delay: 1s;
+}
+
+.quick-action-tile:nth-child(4) {
+  animation-delay: 1.5s;
+}
+
+.quick-action-tile:nth-child(5) {
+  animation-delay: 2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-status-dot,
+  .quick-action-tile,
+  .hero-action-glow,
+  .chart-animated,
+  .chart-animated *,
+  .premium-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@utility exam-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--border) 60%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--border) 60%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 44px 44px;
+}
+
+@utility math-content {
+  & .katex {
+    font-size: 1.05em;
+  }
+  & .katex-display {
+    margin: 0.6em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}
+
+@utility scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 40%, transparent) transparent;
+}
