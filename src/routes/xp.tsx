@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, Zap } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { formatXp, getXpState, xpCycleLabel } from "@/lib/xp";
+import { formatXp, getXpState, makeFreshXpState } from "@/lib/xp";
 
 export const Route = createFileRoute("/xp")({
   head: () => ({
@@ -17,7 +18,14 @@ export const Route = createFileRoute("/xp")({
 });
 
 function XpPage() {
-  const state = getXpState();
+  const [state, setState] = useState(makeFreshXpState);
+
+  useEffect(() => {
+    const sync = () => setState(getXpState());
+    sync();
+    window.addEventListener("cbt-xp-change", sync);
+    return () => window.removeEventListener("cbt-xp-change", sync);
+  }, []);
   return (
     <AppShell>
       <div className="flex items-center gap-2 text-2xl font-bold tracking-tight">
@@ -36,7 +44,9 @@ function XpPage() {
       <div className="mt-6 rounded-xl border bg-card p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-base font-semibold">7-Day Cycle</h2>
-          <span className="text-xs text-muted-foreground">{xpCycleLabel()}</span>
+          <span className="text-xs text-muted-foreground">
+            Day {Math.min(7, Math.max(1, Math.floor((Date.now() - new Date(state.cycleStart).getTime()) / (24 * 60 * 60 * 1000)) + 1))} / 7
+          </span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Cycle starts</span>
