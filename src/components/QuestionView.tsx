@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Images } from "lucide-react";
 import { MathText } from "./MathText";
 import { MathBlocks } from "./MathBlocks";
 
@@ -98,24 +97,21 @@ export function QuestionView({
                 <LazyImage
                   id={id}
                   alt={`Q${question.number} question image ${i + 1}`}
-                  className="h-auto max-h-[min(65vh,600px)] w-full object-contain object-left"
+                  className="block h-auto max-h-[350px] max-w-full w-auto rounded-none border-0 bg-transparent p-0 shadow-none object-contain object-left"
                   onClick={() => setViewer(i)}
                 />
               </div>
             ))}
           </div>
         ) : (
-          <div className="w-full space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase">
-              <Images className="size-3.5" /> Figures ({question.images.length})
-            </div>
+          <div className="w-full">
             <div className="space-y-3">
               {question.images.map((id, i) => (
                 <div key={id} className="w-full">
                   <LazyImage
                     id={id}
                     alt={`Q${question.number} figure ${i + 1}`}
-                    className="h-auto max-h-[min(65vh,600px)] w-full object-contain object-left"
+                    className="block h-auto max-h-[350px] max-w-full w-auto rounded-none border-0 bg-transparent p-0 shadow-none object-contain object-left"
                     onClick={() => setViewer(i)}
                   />
                 </div>
@@ -202,7 +198,7 @@ export function QuestionView({
                           key={imgId}
                           id={imgId}
                           alt={`Option ${oid} image ${k + 1}`}
-                          className="max-h-32 rounded border bg-card p-1"
+                          className="max-h-32 rounded-none border-0 bg-transparent p-0 shadow-none"
                         />
                       ))}
                     </span>
