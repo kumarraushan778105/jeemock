@@ -925,8 +925,8 @@ export function Runner({
       <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* question area */}
         <div className="flex min-w-0 flex-col">
-          <div className="flex-1 p-4 sm:p-6">
-            <div className="mx-auto max-w-3xl">
+          <div className="flex-1 px-3 py-4 sm:px-4 sm:py-6">
+            <div className="mx-auto max-w-5xl">
               <QuestionView
                 question={question}
                 value={
@@ -1498,10 +1498,10 @@ function NtaExamScreen({
           </div>
 
           <div
-            className="min-h-[260px] flex-1 px-6 py-5 sm:px-8"
+            className="min-h-[260px] flex-1 px-4 py-5 sm:px-6"
             style={{ fontSize: `${fontScale}rem` }}
           >
-            <div className={cn("mx-auto w-full", showPalette ? "max-w-3xl" : "max-w-none")}>
+            <div className={cn("mx-auto w-full", showPalette ? "max-w-5xl" : "max-w-none")}>
               <QuestionView
                 question={question}
                 value={value}
