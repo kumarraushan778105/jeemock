@@ -51,7 +51,7 @@ function Home() {
   const tests = useQuery({ queryKey: ["tests"], queryFn: listTests });
   const attempts = useQuery({ queryKey: ["attempts"], queryFn: listAttempts });
   const stats = useQuery({ queryKey: ["dashboardStats"], queryFn: dashboardStats });
-  const [xpBalance, setXpBalance] = useState(0);
+  const xp = getXpState();
 
   const completed = (attempts.data ?? []).filter(isCompleted);
   const [modePickerOpen, setModePickerOpen] = useState(false);
@@ -64,13 +64,6 @@ function Home() {
   useEffect(() => {
     const interval = window.setInterval(() => setLiveNow(new Date()), 15000);
     return () => window.clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const sync = () => setXpBalance(getXpState().balance);
-    sync();
-    window.addEventListener("cbt-xp-change", sync);
-    return () => window.removeEventListener("cbt-xp-change", sync);
   }, []);
 
   const handleScheduledLiveTestClick = async (test: ScheduledLiveTest) => {
@@ -218,7 +211,7 @@ function Home() {
           to="/xp"
           icon={<Sparkles className="size-5" />}
           label="XP"
-          value={`${xpBalance.toLocaleString()} XP`}
+          value={`${xp.balance.toLocaleString()} XP`}
         />
         <Tile
           to="/practice"

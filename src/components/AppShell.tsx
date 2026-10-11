@@ -74,7 +74,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
-  const [xpBalance, setXpBalance] = useState(0);
+  const [xpBalance, setXpBalance] = useState(() => getXpState().balance);
 
   useEffect(() => {
     const sync = () => setXpBalance(getXpState().balance);

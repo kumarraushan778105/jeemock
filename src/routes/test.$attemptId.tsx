@@ -183,6 +183,10 @@ export function Runner({
   const isPreview = Boolean(preview);
   const [attempt, setAttempt] = useState<Attempt>(initial);
   const [index, setIndex] = useState(initial.currentIndex ?? 0);
+  const [pendingAnswer, setPendingAnswer] = useState<{
+    questionId: string;
+    value: AnswerValue;
+  } | null>(null);
   const [fullscreenActive, setFullscreenActive] = useState(
     () => typeof document !== "undefined" && Boolean(document.fullscreenElement),
   );
@@ -262,6 +266,9 @@ export function Runner({
 
   const question = questions[index];
   const answers = attempt.answers;
+  useEffect(() => {
+    setPendingAnswer(null);
+  }, [question?.id]);
   const attemptedCount = questions.reduce(
     (count, item) => count + (isAnswered(answers[item.id]?.value) ? 1 : 0),
     0,
@@ -308,6 +315,24 @@ export function Runner({
       }));
     },
     [update],
+  );
+
+  const savePendingAnswer = useCallback(
+    (questionId: string) => {
+      if (pendingAnswer?.questionId === questionId) {
+        patchAnswer(questionId, { value: pendingAnswer.value });
+      }
+      setPendingAnswer(null);
+    },
+    [patchAnswer, pendingAnswer],
+  );
+
+  const clearAnswer = useCallback(
+    (questionId: string) => {
+      setPendingAnswer((current) => (current?.questionId === questionId ? null : current));
+      patchAnswer(questionId, { value: null });
+    },
+    [patchAnswer],
   );
 
   // mark visited
@@ -615,7 +640,7 @@ export function Runner({
     [persist, questions],
   );
 
-  const setValue = (v: AnswerValue) => patchAnswer(question.id, { value: v });
+  const setValue = (v: AnswerValue) => setPendingAnswer({ questionId: question.id, value: v });
 
   // keyboard shortcuts
   useEffect(() => {
@@ -629,18 +654,23 @@ export function Runner({
         const ids = q ? optionIds(q) : [];
         const opt = ids[Number(e.key) - 1];
         if (q && opt) {
-          const cur = attemptRef.current.answers[q.id]?.value;
+          const cur =
+            pendingAnswer?.questionId === q.id
+              ? pendingAnswer.value
+              : attemptRef.current.answers[q.id]?.value;
           const sel = Array.isArray(cur) ? cur.map(String) : cur ? [String(cur)] : [];
-          patchAnswer(
-            q.id,
-            isMultiCorrect(q)
-              ? { value: sel.includes(opt) ? sel.filter((x) => x !== opt) : [...sel, opt] }
-              : { value: [opt] },
-          );
+          setPendingAnswer({
+            questionId: q.id,
+            value: isMultiCorrect(q)
+              ? sel.includes(opt)
+                ? sel.filter((x) => x !== opt)
+                : [...sel, opt]
+              : [opt],
+              });
         }
       } else if (e.key === "c") {
         const q = questions[indexRef.current];
-        if (q) patchAnswer(q.id, { value: null });
+        if (q) clearAnswer(q.id);
       } else if (e.key === "m") {
         const q = questions[indexRef.current];
         if (q) patchAnswer(q.id, { marked: !attemptRef.current.answers[q.id]?.marked });
@@ -655,7 +685,7 @@ export function Runner({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, patchAnswer, questions]);
+  }, [clearAnswer, go, pendingAnswer, patchAnswer, questions]);
 
   const adjustFontScale = (delta: number) => {
     setFontScale((current) => {
@@ -739,7 +769,15 @@ export function Runner({
         initial={initial}
         update={update}
         setValue={setValue}
+        pendingAnswer={pendingAnswer}
+        value={
+          pendingAnswer?.questionId === question.id
+            ? pendingAnswer.value
+            : answers[question.id]?.value ?? null
+        }
         patchAnswer={patchAnswer}
+        clearAnswer={clearAnswer}
+        savePendingAnswer={savePendingAnswer}
         go={go}
         requestSubmit={requestSubmit}
       />
@@ -891,7 +929,11 @@ export function Runner({
             <div className="mx-auto max-w-3xl">
               <QuestionView
                 question={question}
-                value={answers[question.id]?.value ?? null}
+                value={
+                  pendingAnswer?.questionId === question.id
+                    ? pendingAnswer.value
+                    : answers[question.id]?.value ?? null
+                }
                 onChange={setValue}
                 fontScale={fontScale}
               />
@@ -901,7 +943,7 @@ export function Runner({
           <div className="sticky bottom-0 grid grid-cols-2 gap-2 border-t bg-card p-3 sm:flex sm:items-center sm:justify-between">
             <div className="flex gap-2">
               <ActionBtn
-                onClick={() => patchAnswer(question.id, { value: null })}
+                onClick={() => clearAnswer(question.id)}
                 icon={<Eraser className="size-4" />}
               >
                 Clear <Kbd>C</Kbd>
@@ -943,7 +985,10 @@ export function Runner({
                 Previous
               </ActionBtn>
               <button
-                onClick={() => go(index + 1)}
+                onClick={() => {
+                  savePendingAnswer(question.id);
+                  void go(index + 1);
+                }}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               >
                 Save &amp; Next <ChevronRight className="size-4" />
@@ -996,7 +1041,9 @@ export function Runner({
             {questions.map((q, i) => {
               if (subjectFilter !== "all" && q.subject !== subjectFilter) return null;
               const a = answers[q.id];
-              const ans = isAnswered(a?.value);
+              const ans = isAnswered(
+                pendingAnswer?.questionId === q.id ? pendingAnswer.value : a?.value,
+              );
               return (
                 <button
                   key={q.id}
@@ -1185,7 +1232,11 @@ type NtaExamScreenProps = {
   initial: Attempt;
   update: (fn: (attempt: Attempt) => Attempt) => void;
   setValue: (value: AnswerValue) => void;
+  pendingAnswer: { questionId: string; value: AnswerValue } | null;
+  value: AnswerValue;
   patchAnswer: (questionId: string, patch: Partial<Attempt["answers"][string]>) => void;
+  clearAnswer: (questionId: string) => void;
+  savePendingAnswer: (questionId: string) => void;
   go: (
     index: number,
     allowSubjectChange?: boolean,
@@ -1211,7 +1262,11 @@ function NtaExamScreen({
   initial,
   update,
   setValue,
+  pendingAnswer,
+  value,
   patchAnswer,
+  clearAnswer,
+  savePendingAnswer,
   go,
   requestSubmit,
 }: NtaExamScreenProps) {
@@ -1449,7 +1504,7 @@ function NtaExamScreen({
             <div className={cn("mx-auto w-full", showPalette ? "max-w-3xl" : "max-w-none")}>
               <QuestionView
                 question={question}
-                value={answers[question.id]?.value ?? null}
+                value={value}
                 onChange={setValue}
                 fontScale={fontScale}
               />
@@ -1461,7 +1516,7 @@ function NtaExamScreen({
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  onClick={() => patchAnswer(question.id, { value: null })}
+                  onClick={() => clearAnswer(question.id)}
                   className="rounded border border-blue-300 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
                 >
                   Clear Response
@@ -1486,7 +1541,13 @@ function NtaExamScreen({
                   >
                     Show Question Palette
                   </button>
-                  <NtaSubmitActions goNext={() => navigateWithinSection(1)} requestSubmit={requestSubmit} />
+                  <NtaSubmitActions
+                    goNext={() => {
+                      savePendingAnswer(question.id);
+                      navigateWithinSection(1);
+                    }}
+                    requestSubmit={requestSubmit}
+                  />
                 </div>
               )}
             </div>
@@ -1532,7 +1593,9 @@ function NtaExamScreen({
             <div className="grid grid-cols-5 justify-items-center gap-x-2 gap-y-4 px-5 py-4">
               {sectionQuestions.map(({ item, questionIndex }) => {
                 const answer = answers[item.id];
-                const hasAnswer = isAnswered(answer?.value);
+                const hasAnswer = isAnswered(
+                  pendingAnswer?.questionId === item.id ? pendingAnswer.value : answer?.value,
+                );
                 const status = answer?.marked
                   ? hasAnswer
                     ? "answered-marked"
@@ -1599,7 +1662,13 @@ function NtaExamScreen({
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3 border-t border-slate-300 bg-[#edf4fa] px-5 py-4">
-              <NtaSubmitActions goNext={() => navigateWithinSection(1)} requestSubmit={requestSubmit} />
+              <NtaSubmitActions
+                goNext={() => {
+                  savePendingAnswer(question.id);
+                  navigateWithinSection(1);
+                }}
+                requestSubmit={requestSubmit}
+              />
             </div>
           </aside>
         )}
