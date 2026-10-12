@@ -103,14 +103,19 @@ function TestRunner() {
 
       const attempt = await getAttempt(attemptId);
       if (!attempt) throw new Error("Attempt not found");
+      const isScheduledLiveAttempt =
+        attempt.attemptType === "live" ||
+        attempt.attemptType === "missed" ||
+        Boolean(attempt.scheduledTestId);
+      const runnerAttempt = isScheduledLiveAttempt ? { ...attempt, mode: "nta" as const } : attempt;
       const test = await getTest(attempt.testId);
       const questions: Question[] =
-        attempt.questionsSnapshot ??
-        attempt.questionIds
+        runnerAttempt.questionsSnapshot ??
+        runnerAttempt.questionIds
           .map((id) => test?.questions.find((q) => q.id === id))
           .filter((q): q is Question => Boolean(q));
       if (questions.length === 0) throw new Error("This attempt has no questions available.");
-      return { attempt, questions };
+      return { attempt: runnerAttempt, questions };
     },
     staleTime: 0,
     refetchOnMount: true,
