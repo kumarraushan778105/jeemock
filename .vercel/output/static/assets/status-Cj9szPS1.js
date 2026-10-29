@@ -1,0 +1,1 @@
+import{p as e}from"./x-7PajBn27.js";var t={draft:`Draft`,"in-progress":`In Progress`,completed:`Completed`};function n(t){return t.submitted||t.submittedAt?`completed`:t.remainingSec<t.durationSec||Object.values(t.answers??{}).some(t=>t?.visited||e(t?.value??null))?`in-progress`:`draft`}var r=e=>n(e)===`completed`,i=e=>n(e)!==`completed`;export{i,n,r,t};

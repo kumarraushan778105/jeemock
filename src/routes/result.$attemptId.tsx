@@ -1,12 +1,18 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, CircleSlash, Clock, Target, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { QuestionView } from "@/components/QuestionView";
-import { getAttempt, getTest } from "@/lib/db";
+import { getAttempt, getTest, putAttempt } from "@/lib/db";
+import {
+  isNtaBookmarkCategory,
+  NTA_BOOKMARK_CATEGORIES,
+  type NtaBookmarkCategory,
+} from "@/lib/nta-review";
 import { formatClock, scoreAttempt } from "@/lib/scoring";
-import type { Question, TestSet } from "@/lib/types";
+import type { Attempt, Question, TestSet } from "@/lib/types";
 import { xpForResultAttempt } from "@/lib/xp";
 import { cn } from "@/lib/utils";
 
@@ -31,10 +37,13 @@ export const Route = createFileRoute("/result/$attemptId")({
 });
 
 type Filter = "all" | "correct" | "wrong" | "skipped" | "marked" | "bookmarked";
+type ResultData = { attempt: Attempt; summary: ReturnType<typeof scoreAttempt> };
 
 function ResultPage() {
   const { attemptId } = Route.useParams();
   const [filter, setFilter] = useState<Filter>("all");
+  const queryClient = useQueryClient();
+  const bookmarkWriteChain = useRef(Promise.resolve());
 
   const q = useQuery({
     queryKey: ["result", attemptId],
@@ -63,6 +72,58 @@ function ResultPage() {
     });
   }, [q.data, filter]);
 
+  const saveNtaBookmark = useCallback(
+    (questionId: string, bookmarked: boolean, tag?: NtaBookmarkCategory) => {
+      const operation = bookmarkWriteChain.current.then(async () => {
+        const current = await getAttempt(attemptId);
+        if (!current || !current.submitted || current.mode !== "nta") {
+          throw new Error("This NTA attempt is no longer available.");
+        }
+        const answer = current.answers[questionId];
+        if (!answer) throw new Error("The question response could not be found.");
+
+        const updated: Attempt = {
+          ...current,
+          updatedAt: Date.now(),
+          answers: {
+            ...current.answers,
+            [questionId]: { ...answer, bookmarked, tag: bookmarked ? tag : undefined },
+          },
+        };
+        await putAttempt(updated);
+
+        queryClient.setQueryData<ResultData>(["result", attemptId], (data) => {
+          if (!data) return data;
+          return {
+            ...data,
+            attempt: updated,
+            summary: {
+              ...data.summary,
+              perQuestion: data.summary.perQuestion.map((item) =>
+                item.question.id === questionId
+                  ? { ...item, answer: updated.answers[questionId] }
+                  : item,
+              ),
+            },
+          };
+        });
+        void queryClient.invalidateQueries({ queryKey: ["reports"] });
+        void queryClient.invalidateQueries({ queryKey: ["attempts"] });
+        void queryClient.invalidateQueries({ queryKey: ["bookmarks", attemptId] });
+      });
+      bookmarkWriteChain.current = operation.then(
+        () => undefined,
+        () => undefined,
+      );
+      return operation.catch((error) => {
+        console.error("[nta-bookmark] failed to save question bookmark", error);
+        toast.error("Could not save this bookmark. Please try again.");
+        throw error;
+      });
+    },
+    [attemptId, queryClient],
+  );
+
   if (q.isLoading)
     return (
       <AppShell>
@@ -83,7 +144,10 @@ function ResultPage() {
 
   const { attempt, summary } = q.data;
   const pct = summary.maxScore ? (summary.score / summary.maxScore) * 100 : 0;
-  const xpEarned = xpForResultAttempt(attempt, q.data.summary.perQuestion.map((r) => r.question));
+  const xpEarned = xpForResultAttempt(
+    attempt,
+    q.data.summary.perQuestion.map((r) => r.question),
+  );
 
   return (
     <AppShell>
@@ -218,10 +282,96 @@ function ResultPage() {
               readOnly
               showAnswer
             />
+            {attempt.mode === "nta" && (
+              <NtaBookmarkCategoryControl
+                questionId={r.question.id}
+                bookmarked={Boolean(r.answer?.bookmarked)}
+                tag={r.answer?.tag}
+                onSave={saveNtaBookmark}
+              />
+            )}
           </div>
         ))}
       </div>
     </AppShell>
+  );
+}
+
+function NtaBookmarkCategoryControl({
+  questionId,
+  bookmarked,
+  tag,
+  onSave,
+}: {
+  questionId: string;
+  bookmarked: boolean;
+  tag?: string;
+  onSave: (questionId: string, bookmarked: boolean, tag?: NtaBookmarkCategory) => Promise<void>;
+}) {
+  const [category, setCategory] = useState<NtaBookmarkCategory>(
+    isNtaBookmarkCategory(tag) ? tag : NTA_BOOKMARK_CATEGORIES[0],
+  );
+  const [saving, setSaving] = useState(false);
+
+  const save = async (shouldBookmark: boolean) => {
+    setSaving(true);
+    try {
+      await onSave(questionId, shouldBookmark, shouldBookmark ? category : undefined);
+    } catch {
+      return;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border bg-surface px-3 py-2">
+      <label
+        className="text-xs font-semibold text-muted-foreground"
+        htmlFor={`bookmark-${questionId}`}
+      >
+        Bookmark Category
+      </label>
+      <select
+        id={`bookmark-${questionId}`}
+        value={category}
+        onChange={(event) => {
+          if (isNtaBookmarkCategory(event.target.value)) setCategory(event.target.value);
+        }}
+        className="h-8 rounded-md border bg-background px-2 text-xs font-medium"
+        disabled={saving}
+      >
+        {NTA_BOOKMARK_CATEGORIES.map((item) => (
+          <option key={item} value={item}>
+            {item}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => void save(true)}
+        disabled={saving || (bookmarked && tag === category)}
+        className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        {saving
+          ? "Saving…"
+          : bookmarked
+            ? tag === category
+              ? "Bookmarked"
+              : "Update category"
+            : "Bookmark"}
+      </button>
+      {bookmarked && (
+        <button
+          type="button"
+          onClick={() => void save(false)}
+          disabled={saving}
+          className="rounded-md border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+        >
+          Remove
+        </button>
+      )}
+    </div>
   );
 }
 

@@ -49,7 +49,7 @@ export async function startAttempt(
     paperGroupId: opts?.paperGroupId,
     reattemptOf: opts?.reattemptOf,
     strictMode: opts?.strictMode ?? false,
-    mode: isLiveAttempt ? "nta" : opts?.mode ?? (opts?.strictMode ? "strict" : "normal"),
+    mode: opts?.mode ?? (opts?.strictMode ? "strict" : "normal"),
     attemptType: opts?.attemptType ?? "normal",
     scheduledTestId: opts?.scheduledTestId,
     liveStart: opts?.liveStart,

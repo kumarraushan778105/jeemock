@@ -15,7 +15,5 @@ export default defineConfig({
   nitro: {
     // Vercel expects the Node/serverless Nitro preset, not the Cloudflare module preset.
     preset: "vercel",
-    // TanStack Start's Vite service owns production SSR; avoid Nitro discovering a second root handler.
-    serverEntry: false,
   },
 });

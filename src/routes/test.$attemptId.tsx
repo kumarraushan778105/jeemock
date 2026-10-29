@@ -29,8 +29,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getAttempt, getTest, putAttempt } from "@/lib/db";
+import { getAttempt, getTest, listAttempts, putAttempt } from "@/lib/db";
 import { completeScheduledLiveTest, getLiveTestDraft } from "@/lib/live-tests";
+import { addMarkedQuestionsToBookmarks } from "@/lib/nta-review";
 import { orderQuestionsBySubject } from "@/lib/question-order";
 import { BOOKMARK_TAGS } from "@/lib/advanced";
 import { isMultiCorrect, optionIds } from "@/lib/question-type";
@@ -103,19 +104,14 @@ function TestRunner() {
 
       const attempt = await getAttempt(attemptId);
       if (!attempt) throw new Error("Attempt not found");
-      const isScheduledLiveAttempt =
-        attempt.attemptType === "live" ||
-        attempt.attemptType === "missed" ||
-        Boolean(attempt.scheduledTestId);
-      const runnerAttempt = isScheduledLiveAttempt ? { ...attempt, mode: "nta" as const } : attempt;
       const test = await getTest(attempt.testId);
       const questions: Question[] =
-        runnerAttempt.questionsSnapshot ??
-        runnerAttempt.questionIds
+        attempt.questionsSnapshot ??
+        attempt.questionIds
           .map((id) => test?.questions.find((q) => q.id === id))
           .filter((q): q is Question => Boolean(q));
       if (questions.length === 0) throw new Error("This attempt has no questions available.");
-      return { attempt: runnerAttempt, questions };
+      return { attempt, questions };
     },
     staleTime: 0,
     refetchOnMount: true,
@@ -539,13 +535,48 @@ export function Runner({
     // freeze the attempt first: stops the timer + autosave from resurrecting it
     if (submitted.current) return;
     submitted.current = true;
+    const submissionAttempt = attemptRef.current;
+    let submittedAnswers = submissionAttempt.answers;
+    if (
+      submissionAttempt.mode === "nta" &&
+      questions.some((item) => submissionAttempt.answers[item.id]?.marked)
+    ) {
+      try {
+        const previousAttempts = await listAttempts();
+        const alreadyBookmarkedQuestionIds = new Set(
+          previousAttempts
+            .filter(
+              (previous) =>
+                previous.submitted &&
+                previous.id !== submissionAttempt.id &&
+                previous.testId === submissionAttempt.testId,
+            )
+            .flatMap((previous) =>
+              Object.entries(previous.answers)
+                .filter(([, answer]) => answer.bookmarked)
+                .map(([questionId]) => questionId),
+            ),
+        );
+        submittedAnswers = addMarkedQuestionsToBookmarks(
+          submissionAttempt.answers,
+          questions,
+          alreadyBookmarkedQuestionIds,
+        );
+      } catch (error) {
+        console.error("[submission] failed to load existing bookmarks", error);
+        submitted.current = false;
+        toast.error("Could not check existing bookmarks. Please try submitting again.");
+        return;
+      }
+    }
     const finished: Attempt = {
-      ...attemptRef.current,
+      ...submissionAttempt,
       currentIndex: indexRef.current,
+      answers: submittedAnswers,
       submitted: true,
       submittedAt: Date.now(),
       updatedAt: Date.now(),
-      questionsSnapshot: attemptRef.current.questionsSnapshot ?? questions,
+      questionsSnapshot: submissionAttempt.questionsSnapshot ?? questions,
       status: "COMPLETED",
     };
 
@@ -671,7 +702,7 @@ export function Runner({
                 ? sel.filter((x) => x !== opt)
                 : [...sel, opt]
               : [opt],
-              });
+          });
         }
       } else if (e.key === "c") {
         const q = questions[indexRef.current];
@@ -757,43 +788,43 @@ export function Runner({
   if (attempt.mode === "nta") {
     return (
       <>
-      <NtaExamScreen
-        attempt={attempt}
-        questions={questions}
-        index={index}
-        answers={answers}
-        subjects={subjects}
-        subjectFilter={subjectFilter}
-        setSubjectFilter={setSubjectFilter}
-        fontScale={fontScale}
-        adjustFontScale={adjustFontScale}
-        showCalc={showCalc}
-        setShowCalc={setShowCalc}
-        showPalette={showPalette}
-        setShowPalette={setShowPalette}
-        initial={initial}
-        update={update}
-        setValue={setValue}
-        pendingAnswer={pendingAnswer}
-        value={
-          pendingAnswer?.questionId === question.id
-            ? pendingAnswer.value
-            : answers[question.id]?.value ?? null
-        }
-        patchAnswer={patchAnswer}
-        clearAnswer={clearAnswer}
-        savePendingAnswer={savePendingAnswer}
-        go={go}
-        requestSubmit={requestSubmit}
-      />
-      <SubmitConfirmationDialog
-        open={submitConfirmationOpen}
-        onOpenChange={setSubmitConfirmationOpen}
-        total={questions.length}
-        attempted={attemptedCount}
-        remainingSeconds={attempt.remainingSec}
-        onConfirm={confirmSubmit}
-      />
+        <NtaExamScreen
+          attempt={attempt}
+          questions={questions}
+          index={index}
+          answers={answers}
+          subjects={subjects}
+          subjectFilter={subjectFilter}
+          setSubjectFilter={setSubjectFilter}
+          fontScale={fontScale}
+          adjustFontScale={adjustFontScale}
+          showCalc={showCalc}
+          setShowCalc={setShowCalc}
+          showPalette={showPalette}
+          setShowPalette={setShowPalette}
+          initial={initial}
+          update={update}
+          setValue={setValue}
+          pendingAnswer={pendingAnswer}
+          value={
+            pendingAnswer?.questionId === question.id
+              ? pendingAnswer.value
+              : (answers[question.id]?.value ?? null)
+          }
+          patchAnswer={patchAnswer}
+          clearAnswer={clearAnswer}
+          savePendingAnswer={savePendingAnswer}
+          go={go}
+          requestSubmit={requestSubmit}
+        />
+        <SubmitConfirmationDialog
+          open={submitConfirmationOpen}
+          onOpenChange={setSubmitConfirmationOpen}
+          total={questions.length}
+          attempted={attemptedCount}
+          remainingSeconds={attempt.remainingSec}
+          onConfirm={confirmSubmit}
+        />
       </>
     );
   }
@@ -937,7 +968,7 @@ export function Runner({
                 value={
                   pendingAnswer?.questionId === question.id
                     ? pendingAnswer.value
-                    : answers[question.id]?.value ?? null
+                    : (answers[question.id]?.value ?? null)
                 }
                 onChange={setValue}
                 fontScale={fontScale}
@@ -1242,11 +1273,7 @@ type NtaExamScreenProps = {
   patchAnswer: (questionId: string, patch: Partial<Attempt["answers"][string]>) => void;
   clearAnswer: (questionId: string) => void;
   savePendingAnswer: (questionId: string) => void;
-  go: (
-    index: number,
-    allowSubjectChange?: boolean,
-    allowSectionChange?: boolean,
-  ) => Promise<void>;
+  go: (index: number, allowSubjectChange?: boolean, allowSectionChange?: boolean) => Promise<void>;
   requestSubmit: () => void;
 };
 
@@ -1342,8 +1369,8 @@ function NtaExamScreen({
   };
   const navigateWithinSection = (direction: -1 | 1) => {
     const candidates = direction > 0 ? sectionQuestions : [...sectionQuestions].reverse();
-    const nextQuestion = candidates.find(
-      ({ questionIndex }) => direction > 0 ? questionIndex > index : questionIndex < index,
+    const nextQuestion = candidates.find(({ questionIndex }) =>
+      direction > 0 ? questionIndex > index : questionIndex < index,
     );
     if (nextQuestion) go(nextQuestion.questionIndex, false, true);
   };
@@ -1529,12 +1556,18 @@ function NtaExamScreen({
                 <button
                   type="button"
                   onClick={() => {
-                    patchAnswer(question.id, { marked: true });
+                    savePendingAnswer(question.id);
+                    patchAnswer(question.id, {
+                      marked: !answers[question.id]?.marked,
+                      visited: true,
+                    });
                     navigateWithinSection(1);
                   }}
                   className="rounded border border-blue-300 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
                 >
-                  Mark for Review &amp; Next
+                  {answers[question.id]?.marked
+                    ? "Unmark for Review & Next"
+                    : "Mark for Review & Next"}
                 </button>
               </div>
               {!showPalette && (

@@ -1,0 +1,1 @@
+import{E as e}from"./db-BLXfV4S2.js";async function t(t){let n=new Set(t),r=await e(),i={};for(let e of r)for(let t of e.questions??[])!n.has(t.id)||i[t.id]||(i[t.id]={testId:e.id,testName:e.name,number:t.number,questionId:t.id});return i}export{t};

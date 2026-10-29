@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bookmark } from "lucide-react";
@@ -5,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { NoteEditor } from "@/components/review/NoteEditor";
 import { ReviewList, type ReviewItem } from "@/components/review/ReviewList";
 import { getAttempt, listNotes, noteKey } from "@/lib/db";
+import { NTA_BOOKMARK_CATEGORIES, type NtaBookmarkCategory } from "@/lib/nta-review";
 import { buildReport } from "@/lib/stats";
 import { originMap } from "@/lib/origin";
 
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/bookmarks/$attemptId")({
 
 function BookmarksAttempt() {
   const { attemptId } = Route.useParams();
+  const [categoryFilter, setCategoryFilter] = useState<"all" | NtaBookmarkCategory>("all");
 
   const q = useQuery({
     queryKey: ["bookmarks", attemptId],
@@ -62,9 +65,13 @@ function BookmarksAttempt() {
     );
 
   const { report, notes, sources } = q.data;
-  const items: ReviewItem[] = report.summary.perQuestion
+  const allItems: ReviewItem[] = report.summary.perQuestion
     .filter((p) => p.answer?.bookmarked)
     .map((p) => ({ question: p.question, answer: p.answer, status: p.status, score: p.score }));
+  const items =
+    report.attempt.mode === "nta" && categoryFilter !== "all"
+      ? allItems.filter((item) => item.answer?.tag === categoryFilter)
+      : allItems;
 
   return (
     <AppShell>
@@ -80,6 +87,39 @@ function BookmarksAttempt() {
         </Link>
       </div>
 
+      {report.attempt.mode === "nta" && (
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("all")}
+            className={`rounded-full border px-3 py-1 text-xs font-medium ${
+              categoryFilter === "all"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "bg-card"
+            }`}
+          >
+            All categories ({allItems.length})
+          </button>
+          {NTA_BOOKMARK_CATEGORIES.map((category) => {
+            const count = allItems.filter((item) => item.answer?.tag === category).length;
+            return (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setCategoryFilter(category)}
+                className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                  categoryFilter === category
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "bg-card"
+                }`}
+              >
+                {category} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <ReviewList
         items={items}
         sources={sources}
@@ -87,12 +127,19 @@ function BookmarksAttempt() {
         paletteTitle="Bookmarked"
         emptyText="No bookmarked questions for this filter."
         renderFooter={(r) => (
-          <NoteEditor
-            attemptId={attemptId}
-            questionId={r.question.id}
-            mode="bookmark"
-            initial={notes.find((n) => n.id === noteKey(attemptId, r.question.id))}
-          />
+          <div className="mt-3 space-y-2">
+            {report.attempt.mode === "nta" && r.answer?.tag && (
+              <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                {r.answer.tag}
+              </span>
+            )}
+            <NoteEditor
+              attemptId={attemptId}
+              questionId={r.question.id}
+              mode="bookmark"
+              initial={notes.find((n) => n.id === noteKey(attemptId, r.question.id))}
+            />
+          </div>
         )}
       />
     </AppShell>
