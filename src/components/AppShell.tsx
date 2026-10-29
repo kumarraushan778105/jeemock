@@ -109,6 +109,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="ml-auto flex items-center gap-1">
             <Link
+              to="/bookmarks"
+              aria-label="Bookmarks"
+              className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-xs font-semibold"
+            >
+              <Bookmark className="size-3.5 text-primary" />
+              <span>Bookmarks</span>
+            </Link>
+            <Link
               to="/xp"
               className="hidden items-center gap-1 rounded-lg border bg-card px-2.5 py-1.5 text-xs font-semibold sm:inline-flex"
             >

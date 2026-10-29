@@ -1521,6 +1521,28 @@ function NtaExamScreen({
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
+                  onClick={() =>
+                    patchAnswer(question.id, {
+                      bookmarked: !answers[question.id]?.bookmarked,
+                      visited: true,
+                    })
+                  }
+                  aria-pressed={Boolean(answers[question.id]?.bookmarked)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded border px-4 py-2 text-xs font-semibold",
+                    answers[question.id]?.bookmarked
+                      ? "border-amber-400 bg-amber-50 text-amber-800"
+                      : "border-slate-300 text-slate-700 hover:bg-slate-50",
+                  )}
+                >
+                  <Bookmark
+                    className="size-3.5"
+                    fill={answers[question.id]?.bookmarked ? "currentColor" : "none"}
+                  />
+                  {answers[question.id]?.bookmarked ? "Bookmarked" : "Bookmark"}
+                </button>
+                <button
+                  type="button"
                   onClick={() => clearAnswer(question.id)}
                   className="rounded border border-blue-300 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
                 >
