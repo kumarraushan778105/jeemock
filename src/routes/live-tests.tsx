@@ -65,7 +65,9 @@ function SyllabusPanel({ syllabus }: { syllabus?: LiveTestSyllabus | null }) {
 
 function LiveTestsPage() {
   const router = useRouter();
-  const { draft: draftId } = Route.useSearch();
+  const { draft: draftParam } = Route.useSearch();
+  const scheduleRequested = draftParam?.startsWith("schedule:") ?? false;
+  const draftId = scheduleRequested ? draftParam?.slice("schedule:".length) : draftParam;
   const tests = useQuery({ queryKey: ["tests"], queryFn: listTests });
   const attempts = useQuery({ queryKey: ["attempts"], queryFn: listAttempts });
   const [activeDraftId, setActiveDraftId] = useState<string | null>(draftId ?? null);
@@ -104,10 +106,11 @@ function LiveTestsPage() {
     }
 
     setDraft(next);
-    if (draftId !== next.id) {
+    if (scheduleRequested) setScheduleOpen(true);
+    if (draftId !== next.id || scheduleRequested) {
       router.navigate({ to: "/live-tests", search: { draft: next.id } });
     }
-  }, [draftId, router]);
+  }, [draftId, router, scheduleRequested]);
 
   useEffect(() => {
     if (draft && draft.id !== activeDraftId) {

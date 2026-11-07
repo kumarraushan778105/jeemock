@@ -3,6 +3,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
+  CalendarPlus,
   Copy,
   Download,
   Images,
@@ -32,6 +33,7 @@ import {
 } from "@/lib/db";
 import { exportTestJson, questionNumberFromFilename, validateTest } from "@/lib/import";
 import { startAttempt } from "@/lib/attempt";
+import { createLiveTestDraft } from "@/lib/live-tests";
 import { validationCounts } from "@/lib/validate";
 import type { TestSet } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -181,6 +183,15 @@ function BankPage() {
     setModePickerOpen(true);
   };
 
+  const onScheduleLiveTest = (t: TestSet) => {
+    if (t.status === "invalid") {
+      toast.error("Fix validation errors before scheduling this test.");
+      return;
+    }
+    const draft = createLiveTestDraft(t.questions, t.name);
+    router.navigate({ to: "/live-tests", search: { draft: `schedule:${draft.id}` } });
+  };
+
   const handleModeSelect = async (selectedMode: StartMode) => {
     const decision = await prepareStartMode(selectedMode, {
       fullscreenSupported: !!document.fullscreenEnabled,
@@ -290,6 +301,11 @@ function BankPage() {
                   icon={<Play className="size-3.5" />}
                   label="Open"
                   primary
+                />
+                <Act
+                  onClick={() => onScheduleLiveTest(t)}
+                  icon={<CalendarPlus className="size-3.5" />}
+                  label="Schedule"
                 />
                 <Act
                   onClick={() => setAnswersFor(t.id)}

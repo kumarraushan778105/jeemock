@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { startAttempt } from "./attempt";
 import {
   buildLiveTestPreviewAttempt,
   cloneQuestionForDraft,
@@ -17,7 +18,13 @@ import {
   scheduleLiveTest,
 } from "./live-tests";
 import { applyMissedLiveTestPenalty, getXpState, resetXpForTesting, setXpStateForTesting } from "./xp";
-import type { Question } from "./types";
+import type { Question, TestSet } from "./types";
+
+vi.mock("./db", () => ({
+  bumpUsage: vi.fn(),
+  putAttempt: vi.fn(),
+  uid: vi.fn(() => "att-live-test"),
+}));
 
 const storage = new Map<string, string>();
 Object.defineProperty(globalThis, "window", {
@@ -69,6 +76,31 @@ const sampleQuestion: Question = {
 };
 
 describe("live test preview", () => {
+  it("always starts scheduled attempts in NTA CBT mode", async () => {
+    const test: TestSet = {
+      id: "scheduled-test",
+      name: "Scheduled test",
+      subjects: ["Physics"],
+      chapters: ["Units"],
+      questionCount: 1,
+      imageCount: 0,
+      missingImages: 0,
+      importedAt: Date.now(),
+      updatedAt: Date.now(),
+      source: "custom",
+      durationMin: 60,
+      status: "valid",
+      issues: [],
+      questions: [sampleQuestion],
+    };
+
+    const liveAttempt = await startAttempt(test, { attemptType: "live", mode: "normal" });
+    const missedAttempt = await startAttempt(test, { attemptType: "missed", mode: "normal" });
+
+    expect(liveAttempt.mode).toBe("nta");
+    expect(missedAttempt.mode).toBe("nta");
+  });
+
   it("creates a temporary CBT preview attempt from the current draft", () => {
     const draft = createLiveTestDraft([sampleQuestion], "Draft Preview");
     const previewId = liveTestPreviewAttemptId(draft.id);
