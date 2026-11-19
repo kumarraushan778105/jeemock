@@ -1654,7 +1654,7 @@ function NtaExamScreen({
                       );
                     }}
                     className={cn(
-                      "relative grid size-8 place-items-center text-xs font-bold transition-colors",
+                      "relative grid size-10 place-items-center text-xs font-bold transition-colors",
                       status === "answered" && "bg-[#4f8d35] text-white",
                       status === "not-answered" && "bg-[#c84e20] text-white",
                       status === "marked" && "rounded-full bg-[#7952aa] text-white",
