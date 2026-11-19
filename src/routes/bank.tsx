@@ -2,9 +2,8 @@ import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  CheckCircle2,
   CalendarPlus,
-  Copy,
+  CheckCircle2,
   Download,
   Images,
   KeyRound,
@@ -17,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { StartModeDialog, type StartMode } from "@/components/StartModeDialog";
+import { BankTestDialog } from "@/components/BankTestDialog";
 import { LazyImage, ImageViewer } from "@/components/ImageViewer";
 import { AnswerEditor } from "@/components/bank/AnswerEditor";
 import { StatusDot } from "./index";
@@ -34,6 +34,7 @@ import {
 import { exportTestJson, questionNumberFromFilename, validateTest } from "@/lib/import";
 import { startAttempt } from "@/lib/attempt";
 import { createLiveTestDraft } from "@/lib/live-tests";
+import { selectValidBankQuestions } from "@/lib/bank-test";
 import { validationCounts } from "@/lib/validate";
 import type { TestSet } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -49,7 +50,7 @@ export const Route = createFileRoute("/bank")({
       {
         name: "description",
         content:
-          "Manage imported JEE test sets: open, rename, duplicate, validate, export, edit answer keys and map diagrams to questions.",
+          "Manage imported JEE question banks: start tests, rename, validate, export, edit answer keys and map diagrams to questions.",
       },
       { property: "og:title", content: "Question Bank — JEE CBT Platform" },
       {
@@ -74,6 +75,7 @@ function BankPage() {
   const [figuresFor, setFiguresFor] = useState<TestSet | null>(null);
   const [answersFor, setAnswersFor] = useState<string | null>(edit ?? null);
   const [modePickerOpen, setModePickerOpen] = useState(false);
+  const [goTestFor, setGoTestFor] = useState<TestSet | null>(null);
   const [pendingLaunch, setPendingLaunch] = useState<
     ((selectedMode: StartMode) => Promise<void>) | null
   >(null);
@@ -112,31 +114,6 @@ function BankPage() {
     await putTest({ ...t, name: name.trim(), updatedAt: Date.now() });
     refresh();
     toast.success("Renamed");
-  };
-
-  const onDuplicate = async (t: TestSet) => {
-    const copy: TestSet = {
-      ...t,
-      id: uid("test"),
-      name: `${t.name} (copy)`,
-      importedAt: Date.now(),
-    };
-    // duplicate image records so deletes stay independent
-    const imgs = await listImages(t.id);
-    const idMap = new Map<string, string>();
-    const cloned = imgs.map((i) => {
-      const nid = `${copy.id}::${i.name.toLowerCase()}_${Math.random().toString(36).slice(2, 6)}`;
-      idMap.set(i.id, nid);
-      return { ...i, id: nid, testId: copy.id };
-    });
-    await putImages(cloned);
-    copy.questions = t.questions.map((q) => ({
-      ...q,
-      images: q.images.map((id) => idMap.get(id) ?? id),
-    }));
-    await putTest(copy);
-    refresh();
-    toast.success("Duplicated");
   };
 
   const onDelete = async (t: TestSet) => {
@@ -214,6 +191,43 @@ function BankPage() {
       setPendingLaunch(null);
       await currentLaunch(selectedMode);
     }
+  };
+
+  const handleGoTest = async ({
+    questionCount,
+    durationMin,
+    mode,
+  }: {
+    questionCount: number;
+    durationMin: number;
+    mode: StartMode;
+  }) => {
+    if (!goTestFor) return;
+    const test = await getTest(goTestFor.id);
+    if (!test) throw new Error("This question bank is no longer available.");
+    const questions = selectValidBankQuestions(test.questions, questionCount);
+    const decision = await prepareStartMode(mode, {
+      fullscreenSupported: !!document.fullscreenEnabled,
+      isFullscreen: !!document.fullscreenElement,
+      requestFullscreen: async () => {
+        try {
+          await document.documentElement.requestFullscreen();
+          return true;
+        } catch {
+          return false;
+        }
+      },
+    });
+    if (!decision.ok) throw new Error(decision.error);
+
+    const attempt = await startAttempt(test, {
+      questions,
+      durationMin,
+      mode,
+      strictMode: mode === "strict",
+    });
+    qc.invalidateQueries({ queryKey: ["attempts"] });
+    await router.navigate({ to: "/test/$attemptId", params: { attemptId: attempt.id } });
   };
 
   const subjects = [...new Set((tests.data ?? []).flatMap((t) => t.subjects))];
@@ -329,9 +343,10 @@ function BankPage() {
                   label="Rename"
                 />
                 <Act
-                  onClick={() => onDuplicate(t)}
-                  icon={<Copy className="size-3.5" />}
-                  label="Duplicate"
+                  onClick={() => setGoTestFor(t)}
+                  icon={<Play className="size-3.5" />}
+                  label="Go Test"
+                  primary
                 />
                 <Act
                   onClick={() => onExport(t)}
@@ -357,6 +372,15 @@ function BankPage() {
           if (!open) setPendingLaunch(null);
         }}
         onStart={handleModeSelect}
+      />
+
+      <BankTestDialog
+        test={goTestFor}
+        open={goTestFor !== null}
+        onOpenChange={(open) => {
+          if (!open) setGoTestFor(null);
+        }}
+        onStart={handleGoTest}
       />
 
       {figuresFor && (

@@ -1,5 +1,21 @@
 export type StartMode = "normal" | "strict" | "nta";
 
+export const START_MODE_CONFIG: Record<StartMode, { label: string; description: string }> = {
+  normal: {
+    label: "Normal Mode",
+    description: "Regular exam experience. The test always starts in fullscreen.",
+  },
+  strict: {
+    label: "Strict Mode (Recommended)",
+    description:
+      "The test starts in Fullscreen. Every tab switch, window switch or minimise counts as one violation — after 3 violations your test is submitted automatically.",
+  },
+  nta: {
+    label: "NTA-Style CBT Mode",
+    description: "Experience a JEE Main-style computer-based examination interface in fullscreen.",
+  },
+};
+
 export interface StartModeDecision {
   ok: boolean;
   error?: string;

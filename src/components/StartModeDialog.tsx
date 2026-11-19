@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { MonitorCheck, ShieldCheck, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { START_MODE_CONFIG, type StartMode } from "@/lib/start-mode";
 
-export type StartMode = "normal" | "strict" | "nta";
+export type { StartMode } from "@/lib/start-mode";
 
 export function StartModeDialog({
   open,
@@ -75,9 +76,9 @@ export function StartModeDialog({
               <MonitorCheck className="size-4" />
             </div>
             <div>
-              <div className="font-semibold">Normal Mode</div>
+              <div className="font-semibold">{START_MODE_CONFIG.normal.label}</div>
               <div className="mt-1 text-sm text-muted-foreground">
-                Regular exam experience. The test always starts in fullscreen.
+                {START_MODE_CONFIG.normal.description}
               </div>
             </div>
           </button>
@@ -96,10 +97,9 @@ export function StartModeDialog({
               <ShieldCheck className="size-4" />
             </div>
             <div>
-              <div className="font-semibold">Strict Mode (Recommended)</div>
+              <div className="font-semibold">{START_MODE_CONFIG.strict.label}</div>
               <div className="mt-1 text-sm text-muted-foreground">
-                The test starts in Fullscreen. Every tab switch, window switch or minimise counts as
-                one violation — after 3 violations your test is submitted automatically.
+                {START_MODE_CONFIG.strict.description}
               </div>
             </div>
           </button>
@@ -118,9 +118,9 @@ export function StartModeDialog({
               <MonitorCheck className="size-4" />
             </div>
             <div>
-              <div className="font-semibold">NTA-Style CBT Mode</div>
+              <div className="font-semibold">{START_MODE_CONFIG.nta.label}</div>
               <div className="mt-1 text-sm text-muted-foreground">
-                Experience a JEE Main-style computer-based examination interface in fullscreen.
+                {START_MODE_CONFIG.nta.description}
               </div>
             </div>
           </button>
