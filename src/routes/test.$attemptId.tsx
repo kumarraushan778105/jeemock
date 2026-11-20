@@ -1654,9 +1654,9 @@ function NtaExamScreen({
                       );
                     }}
                     className={cn(
-                      "relative grid size-8 place-items-center text-xs font-bold transition-colors",
-                      status === "answered" && "bg-[#4f8d35] text-white",
-                      status === "not-answered" && "bg-[#c84e20] text-white",
+                      "relative grid size-9.5 place-items-center text-xs font-bold transition-colors",
+                      status === "answered" && "bg-[#15803d] text-white",
+                      status === "not-answered" && "bg-[#dc2626] text-white",
                       status === "marked" && "rounded-full bg-[#7952aa] text-white",
                       status === "answered-marked" && "rounded-full bg-[#7952aa] text-white",
                       status === "not-visited" &&
@@ -1765,9 +1765,9 @@ function NtaLegend({
 }) {
   const color =
     variant === "answered"
-      ? "bg-[#4f8d35] text-white"
+      ? "bg-[#15803d] text-white"
       : variant === "not-answered"
-        ? "bg-[#c84e20] text-white"
+        ? "bg-[#dc2626] text-white"
         : variant === "square"
           ? "rounded-sm border border-[#b9b9b9] bg-[#e9e9e9] text-slate-600"
           : "rounded-full bg-[#7952aa] text-white";
